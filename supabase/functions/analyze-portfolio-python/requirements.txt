@@ -1,0 +1,8 @@
+# Python dependencies for Supabase Edge Functions
+# Deploy: supabase functions deploy analyze-portfolio-python --requirements requirements.txt
+
+spacy==3.7.2
+together==0.2.11
+supabase==2.0.3
+pydantic==2.5.0
+python-dateutil==2.8.2
