@@ -10,7 +10,7 @@ export function supabaseServer(): SupabaseClient {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   
   if (!url || !key) {
-    throw new Error("Supabase server environment variables missing");
+    throw new Error(`Supabase server environment variables missing: url=${!!url}, key=${!!key}`);
   }
   
   serverInstance = createClient(url, key, {

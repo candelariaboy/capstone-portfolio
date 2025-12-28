@@ -87,8 +87,13 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("Error creating user:", error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
     return NextResponse.json(
-      { message: "Internal server error" },
+      { 
+        message: "Internal server error",
+        error: errorMessage,
+        details: process.env.NODE_ENV === "development" ? { error } : undefined
+      },
       { status: 500 }
     );
   }
