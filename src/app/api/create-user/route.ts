@@ -17,18 +17,51 @@ export async function POST(request: NextRequest) {
     // Validate required fields
     if (!student_id || !name || !email) {
       return NextResponse.json(
-        { message: "Missing required fields" },
+        { message: "Missing required fields: student_id, name, email" },
         { status: 400 }
       );
     }
 
-    const db = supabaseServer();
+    // Validate email format
+    if (!email.includes("@")) {
+      return NextResponse.json(
+        { message: "Invalid email format" },
+        { status: 400 }
+      );
+    }
+
+    let db;
+    try {
+      db = supabaseServer();
+    } catch (error) {
+      console.error("Supabase initialization error:", error);
+      return NextResponse.json(
+        { message: "Database connection failed - environment variables may be missing" },
+        { status: 503 }
+      );
+    }
 
     // Check if student already exists
-    const { data: existingUser, error: checkError } = await db
-      .from("users")
-      .select("id")
-      .eq("student_id", student_id);
+    let existingUser;
+    try {
+      const result = await db
+        .from("users")
+        .select("id")
+        .eq("student_id", student_id);
+
+      if (result.error) {
+        console.error("Query error:", result.error);
+        throw result.error;
+      }
+
+      existingUser = result.data;
+    } catch (error) {
+      console.error("Error checking for existing user:", error);
+      return NextResponse.json(
+        { message: "Failed to check for existing student" },
+        { status: 500 }
+      );
+    }
 
     if (existingUser && existingUser.length > 0) {
       return NextResponse.json(
@@ -38,46 +71,64 @@ export async function POST(request: NextRequest) {
     }
 
     // Create user
-    const { data: user, error: userError } = await db
-      .from("users")
-      .insert({
-        student_id,
-        name,
-        email,
-        major,
-        year_level,
-        skills: skills || [],
-        interests: interests || [],
-        points: 50, // Initial points
-        level: 1,
-      })
-      .select()
-      .single();
+    let user;
+    try {
+      const { data, error } = await db
+        .from("users")
+        .insert({
+          student_id,
+          name,
+          email,
+          major: major || "BSCS",
+          year_level: year_level || 1,
+          skills: skills || [],
+          interests: interests || [],
+          points: 50,
+          level: 1,
+        })
+        .select()
+        .single();
 
-    if (userError) {
-      console.error("User creation error:", userError);
+      if (error) {
+        console.error("Insert error:", error);
+        throw error;
+      }
+
+      user = data;
+    } catch (error) {
+      console.error("User creation error:", error);
       return NextResponse.json(
-        { message: "Failed to create user" },
+        { message: "Failed to create user account" },
         { status: 500 }
       );
     }
 
-    // Award "New Student" badge
-    await db.from("badges").insert({
-      user_id: user.id,
-      badge_type: "new_student",
-    });
+    // Award "New Student" badge (non-critical)
+    try {
+      await db.from("badges").insert({
+        user_id: user.id,
+        badge_type: "new_student",
+      });
+    } catch (error) {
+      console.warn("Badge insertion warning:", error);
+      // Don't fail if badge insert fails
+    }
 
-    // Log the activity
-    await db.from("activity_logs").insert({
-      user_id: user.id,
-      action_type: "account_created",
-      metadata: {
-        major,
-        year_level,
-        skills_count: skills?.length || 0,
-      },
-    });
+    // Log the activity (non-critical)
+    try {
+      await db.from("activity_logs").insert({
+        user_id: user.id,
+        action_type: "account_created",
+        metadata: {
+          major,
+          year_level,
+          skills_count: skills?.length || 0,
+        },
+      });
+    } catch (error) {
+      console.warn("Activity log warning:", error);
+      // Don't fail if logging fails
+    }
 
     return NextResponse.json({
       success: true,
@@ -85,14 +136,9 @@ export async function POST(request: NextRequest) {
       message: "Account created successfully",
     });
   } catch (error) {
-    console.error("Error creating user:", error);
-    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error("Fatal error in create-user:", error);
     return NextResponse.json(
-      { 
-        message: "Internal server error",
-        error: errorMessage,
-        details: process.env.NODE_ENV === "development" ? { error } : undefined
-      },
+      { message: "Internal server error" },
       { status: 500 }
     );
   }
