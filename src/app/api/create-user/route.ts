@@ -25,13 +25,12 @@ export async function POST(request: NextRequest) {
     const db = supabaseServer();
 
     // Check if student already exists
-    const { data: existingUser } = await db
+    const { data: existingUser, error: checkError } = await db
       .from("users")
       .select("id")
-      .eq("student_id", student_id)
-      .single();
+      .eq("student_id", student_id);
 
-    if (existingUser) {
+    if (existingUser && existingUser.length > 0) {
       return NextResponse.json(
         { message: "Student ID already registered" },
         { status: 409 }

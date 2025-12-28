@@ -76,7 +76,7 @@ export function AccountCreationForm() {
           email: formData.email,
           major: formData.major,
           year_level: formData.year_level,
-          skills: formData.skills.map((skill) => ({ name: skill })),
+          skills: formData.skills,
           interests: formData.interests
             .split(",")
             .map((i) => i.trim())
