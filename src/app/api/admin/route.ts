@@ -10,6 +10,14 @@ import { StudentAnalytics, DashboardMetrics } from "@/types";
 
 export async function GET(request: NextRequest) {
   try {
+    // Safety check - prevent build-time execution
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
+      return NextResponse.json(
+        { error: "Supabase not configured" },
+        { status: 500 }
+      );
+    }
+
     const { searchParams } = new URL(request.url);
     const sortBy = searchParams.get("sort_by") || "points";
     const limit = parseInt(searchParams.get("limit") || "100");
