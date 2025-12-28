@@ -6,6 +6,7 @@ import {
   classifySkills,
   calculatePortfolioQualityScore
 } from "@/lib/huggingface-distilbert";
+import { HfInference } from "@huggingface/inference";
 
 // Simple skill extraction - now enhanced with LangChain + DistilBERT
 const COMMON_SKILLS = [
@@ -165,8 +166,8 @@ export async function POST(request: NextRequest) {
         .eq("id", portfolio_item_id);
     }
 
-    // Generate AI recommendations based on extracted skills
-    const recommendations = generateRecommendations(extractedSkills);
+    // Generate AI recommendations using Hugging Face Phi-3-mini (FREE)
+    const recommendations = await generateRecommendationsWithHF(extractedSkills, textContent);
 
     // Store recommendations in database
     for (const rec of recommendations) {
@@ -206,7 +207,67 @@ export async function POST(request: NextRequest) {
   }
 }
 
-function generateRecommendations(
+async function generateRecommendationsWithHF(
+  skills: string[],
+  description: string
+): Promise<{ type: "skill" | "project" | "course"; title: string; description: string; reason: string }[]> {
+  try {
+    if (!process.env.HF_TOKEN) {
+      throw new Error("HF_TOKEN not configured");
+    }
+
+    const hf = new HfInference(process.env.HF_TOKEN);
+    
+    const prompt = `You are an AI career advisor for computer science students. Based on the student's skills and portfolio description, generate exactly 3 personalized learning recommendations in JSON format.
+
+Student Skills: ${skills.join(", ")}
+Portfolio Description: ${description.substring(0, 500)}
+
+Generate recommendations as a JSON array with exactly 3 items. Each item must have:
+- type: "skill", "project", or "course"
+- title: recommendation title
+- description: 2-3 sentence explanation
+- reason: why this helps them
+
+Return ONLY valid JSON array, no markdown:
+[{"type": "skill", "title": "...", "description": "...", "reason": "..."}]`;
+
+    const response = await hf.textGeneration({
+      model: "microsoft/Phi-3-mini-4k-instruct",
+      inputs: prompt,
+      parameters: {
+        max_new_tokens: 500,
+        temperature: 0.7,
+        return_full_text: false,
+      }
+    });
+
+    // Parse the LLM response
+    const responseText = response.generated_text || "";
+    const jsonMatch = responseText.match(/\[\s*{[\s\S]*}\s*\]/);
+    
+    if (!jsonMatch) {
+      console.warn("Failed to parse HF response, using fallback recommendations");
+      return generateFallbackRecommendations(skills);
+    }
+
+    const recommendations = JSON.parse(jsonMatch[0]);
+    
+    // Validate and sanitize recommendations
+    return recommendations.slice(0, 3).map((rec: any) => ({
+      type: rec.type || "skill",
+      title: (rec.title || "Recommendation").substring(0, 100),
+      description: (rec.description || "No description provided").substring(0, 300),
+      reason: (rec.reason || "Recommended for your growth").substring(0, 200)
+    }));
+  } catch (error) {
+    console.error("HF API recommendation generation failed:", error);
+    // Fallback to basic recommendations
+    return generateFallbackRecommendations(skills);
+  }
+}
+
+function generateFallbackRecommendations(
   skills: string[]
 ): { type: "skill" | "project" | "course"; title: string; description: string; reason: string }[] {
   const recommendations = [];

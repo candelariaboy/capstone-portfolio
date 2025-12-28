@@ -103,8 +103,8 @@ Value: your-anon-key-here
 Name: SUPABASE_SERVICE_ROLE_KEY
 Value: your-service-role-key-here
 
-Name: TOGETHER_API_KEY
-Value: your-together-api-key (optional)
+Name: HF_TOKEN
+Value: hf_xxxxxxxxxxxxxxxxxxxxxxxxxxxxx (from huggingface.co - FREE)
 
 Name: UPLOAD_MAX_FILE_SIZE
 Value: 209715200

@@ -39,7 +39,7 @@ cp .env.local.example .env.local
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key-here
-TOGETHER_API_KEY=your-together-api-key (optional)
+HF_TOKEN=hf_xxxxxxxxxxxxxxxxxxxxxxxxxxxxx (from huggingface.co)
 UPLOAD_MAX_FILE_SIZE=209715200
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 NODE_ENV=development

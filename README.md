@@ -18,8 +18,8 @@ A production-ready web application for BSCS and BSIT students to showcase their 
 - **Real-time Analytics** - Track your progress with progress bars and charts
 
 ### 🤖 AI & NLP Features
+- **Hugging Face Inference API** - FREE Phi-3-mini LLM for personalized recommendations (1M tokens/month)
 - **Transformers.js** - Client-side NLP for skill extraction
-- **Together AI Integration** - Phi-3-mini LLM for personalized recommendations
 - **Smart Skill Detection** - Context-aware extraction from portfolio items
 - **Personalized Learning Paths** - Dynamic suggestions based on your profile
 
@@ -52,9 +52,10 @@ A production-ready web application for BSCS and BSIT students to showcase their 
 - **RLS Policies** - Disabled for no-auth demo
 
 ### AI/ML
-- **Together AI** - Phi-3-mini LLM ($10 credits free)
+- **Hugging Face Inference API** - Phi-3-mini LLM (FREE - 1M tokens/month)
+- **Transformers.js** - Client-side NLP models
 - **Custom NLP Pipeline** - Skill extraction engine
-- **Recommendation Engine** - Context-aware suggestions
+- **Recommendation Engine** - LLM-powered suggestions
 
 ### Deployment
 - **Vercel** - Next.js hosting (free tier)
@@ -84,7 +85,7 @@ See [database.sql](./database.sql) for complete schema.
 - Node.js 18+
 - npm or pnpm
 - Supabase account (free tier works initially)
-- Together AI API key (optional - for LLM recommendations)
+- Hugging Face API token (from huggingface.co) - FREE LLM recommendations
 
 ### Local Development
 

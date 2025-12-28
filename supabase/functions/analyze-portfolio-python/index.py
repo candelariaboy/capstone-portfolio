@@ -1,10 +1,11 @@
 """
-Supabase Edge Function - Portfolio Analysis with spaCy + Phi-3
-Python version using spaCy for NLP and Together AI for LLM recommendations
+Supabase Edge Function - Portfolio Analysis with spaCy + Hugging Face Phi-3
+Python version using spaCy for NLP and Hugging Face Inference API (FREE) for LLM recommendations
 
 To deploy:
 1. Install Supabase CLI: npm install -g supabase
 2. Deploy: supabase functions deploy analyze-portfolio-python
+3. Requires: HF_TOKEN environment variable (from huggingface.co)
 """
 
 import json
@@ -15,7 +16,7 @@ from http.server import BaseHTTPRequestHandler
 
 # Note: These imports would be available in Supabase Python environment
 # import spacy
-# from together import Together
+# from huggingface_hub import InferenceClient
 
 
 class AnalysisRequest:
@@ -123,7 +124,7 @@ class NLPProcessor:
 
 
 class RecommendationGenerator:
-    """Generate recommendations using LLM (Phi-3 via Together AI)"""
+    """Generate recommendations using Hugging Face Phi-3 (FREE - 1M tokens/month)"""
     
     @classmethod
     def generate(
@@ -133,7 +134,69 @@ class RecommendationGenerator:
         proficiencies: Dict[str, str],
         sentiment: Dict[str, Any],
     ) -> List[Dict[str, Any]]:
-        """Generate personalized recommendations"""
+        """Generate personalized recommendations using Hugging Face API"""
+        try:
+            from huggingface_hub import InferenceClient
+            
+            hf_token = os.environ.get("HF_TOKEN")
+            if not hf_token:
+                return cls._fallback_recommendations(skills, interests, proficiencies)
+            
+            client = InferenceClient(token=hf_token)
+            
+            prompt = f"""You are an AI career advisor for computer science students. Generate exactly 3 personalized learning recommendations based on:
+
+Student Skills: {", ".join(skills) if skills else "No specific skills mentioned"}
+Interests: {", ".join(interests) if interests else "General tech"}
+Portfolio Sentiment: {sentiment.get("label", "neutral")}
+
+Generate recommendations as a JSON array with exactly 3 items. Each must have:
+- type: "skill", "project", or "course"
+- title: recommendation title
+- description: 2-3 sentences
+- reason: why this helps
+
+Return ONLY valid JSON array, no markdown:
+[{{"type": "skill", "title": "...", "description": "...", "reason": "..."}}]"""
+
+            response = client.text_generation(
+                prompt,
+                model="microsoft/Phi-3-mini-4k-instruct",
+                max_new_tokens=500,
+                temperature=0.7,
+            )
+            
+            # Parse JSON from response
+            import re
+            json_match = re.search(r"\[\s*{[\s\S]*?}\s*\]", response)
+            
+            if json_match:
+                recs = json.loads(json_match.group())
+                return [
+                    {
+                        "suggestion_type": r.get("type", "skill"),
+                        "content": {
+                            "title": r.get("title", "Recommendation"),
+                            "description": r.get("description", "No description"),
+                            "reason": r.get("reason", "Recommended for your growth"),
+                        },
+                        "confidence": 0.85,
+                        "ai_model": "Phi-3-mini (Hugging Face)"
+                    }
+                    for r in recs[:3]
+                ]
+        except Exception as e:
+            print(f"HF API error: {e}")
+            return cls._fallback_recommendations(skills, interests, proficiencies)
+    
+    @classmethod
+    def _fallback_recommendations(
+        cls,
+        skills: List[str],
+        interests: List[str],
+        proficiencies: Dict[str, str],
+    ) -> List[Dict[str, Any]]:
+        """Fallback to basic recommendations if API fails"""
         recommendations = []
         
         # Skill gap recommendations
@@ -155,6 +218,7 @@ class RecommendationGenerator:
                     "estimated_time": "4-6 weeks",
                 },
                 "confidence": 0.85,
+                "ai_model": "Fallback (rules-based)"
             })
         
         # Interest-based project recommendations
@@ -177,23 +241,20 @@ class RecommendationGenerator:
                 "confidence": 0.80,
             })
         
-        # Course recommendations based on proficiency gaps
-        beginner_skills = [s for s, p in proficiencies.items() if p == "Beginner"]
-        if beginner_skills:
-            recommendations.append({
-                "suggestion_type": "course",
-                "content": {
-                    "title": f"Complete {beginner_skills[0]} Course",
-                    "description": f"Structured learning path for {beginner_skills[0]}",
-                    "reason": "Build strong fundamentals",
-                    "difficulty": "beginner",
-                    "estimated_time": "3-4 weeks",
-                    "platforms": ["Udemy", "Coursera", "Codecademy"],
-                },
-                "confidence": 0.75,
-            })
+        # Course recommendations
+        recommendations.append({
+            "suggestion_type": "course",
+            "content": {
+                "title": "Advanced Web Development",
+                "description": "Master modern web development with latest frameworks and tools",
+                "reason": "Essential for career growth",
+                "difficulty": "intermediate",
+                "estimated_time": "6-8 weeks",
+            },
+            "confidence": 0.75,
+        })
         
-        return recommendations[:3]  # Return top 3
+        return recommendations[:3]
 
 
 class PortfolioAnalyzer:
