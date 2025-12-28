@@ -22,7 +22,7 @@ export default function RecommendationsPage() {
   const loadRecommendations = async () => {
     if (!userId) return;
     try {
-      const { data } = await supabase
+      const { data } = await supabase()
         .from("recommendations")
         .select("*")
         .eq("user_id", userId)
@@ -40,27 +40,27 @@ export default function RecommendationsPage() {
   const handleAcceptRecommendation = async (recId: string) => {
     try {
       // Mark as accepted
-      await supabase
+      await supabase()
         .from("recommendations")
         .update({ accepted: true })
         .eq("id", recId);
 
       // Award 50 points
       if (userId) {
-        const { data: user } = await supabase
+        const { data: user } = await supabase()
           .from("users")
           .select("*")
           .eq("id", userId)
           .single();
 
         if (user) {
-          await supabase
+          await supabase()
             .from("users")
             .update({ points: user.points + 50 })
             .eq("id", userId);
 
           // Award badge if applicable
-          await supabase.from("badges").insert({
+          await supabase().from("badges").insert({
             user_id: userId,
             badge_type: "ai_follower",
           });

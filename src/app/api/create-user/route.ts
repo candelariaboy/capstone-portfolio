@@ -22,8 +22,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const db = supabaseServer();
+
     // Check if student already exists
-    const { data: existingUser } = await supabaseServer
+    const { data: existingUser } = await db
       .from("users")
       .select("id")
       .eq("student_id", student_id)
@@ -37,7 +39,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create user
-    const { data: user, error: userError } = await supabaseServer
+    const { data: user, error: userError } = await db
       .from("users")
       .insert({
         student_id,
@@ -62,13 +64,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Award "New Student" badge
-    await supabaseServer.from("badges").insert({
+    await db.from("badges").insert({
       user_id: user.id,
       badge_type: "new_student",
     });
 
     // Log the activity
-    await supabaseServer.from("activity_logs").insert({
+    await db.from("activity_logs").insert({
       user_id: user.id,
       action_type: "account_created",
       metadata: {

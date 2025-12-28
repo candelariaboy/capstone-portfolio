@@ -24,7 +24,7 @@ export default function PortfolioPage() {
   const loadPortfolio = async () => {
     if (!userId) return;
     try {
-      const { data } = await supabase
+      const { data } = await supabase()
         .from("portfolio_items")
         .select("*")
         .eq("user_id", userId)
@@ -67,7 +67,7 @@ export default function PortfolioPage() {
       const timestamp = Date.now();
       const filePath = `${userId}/${timestamp}-${file.name}`;
 
-      const { error: uploadError } = await supabase.storage
+      const { error: uploadError } = await supabase().storage
         .from("portfolios")
         .upload(filePath, file);
 
@@ -81,10 +81,10 @@ export default function PortfolioPage() {
       // Get public URL
       const {
         data: { publicUrl },
-      } = supabase.storage.from("portfolios").getPublicUrl(filePath);
+      } = supabase().storage.from("portfolios").getPublicUrl(filePath);
 
       // Create portfolio item in database
-      const { data: portfolioItem, error: dbError } = await supabase
+      const { data: portfolioItem, error: dbError } = await supabase()
         .from("portfolio_items")
         .insert({
           user_id: userId,
@@ -130,7 +130,7 @@ export default function PortfolioPage() {
 
       // Award points and badges
       try {
-        const { data: user } = await supabase
+        const { data: user } = await supabase()
           .from("users")
           .select("*")
           .eq("id", userId)
@@ -138,20 +138,20 @@ export default function PortfolioPage() {
 
         if (user) {
           // Award 25 points
-          await supabase
+          await supabase()
             .from("users")
             .update({ points: user.points + 25 })
             .eq("id", userId);
 
           // Check if 3 items milestone reached
           if (portfolio.length + 1 === 3) {
-            await supabase.from("badges").insert({
+            await supabase().from("badges").insert({
               user_id: userId,
               badge_type: "builder_ii",
             });
             toast.success('🏢 Earned "Builder II" badge!');
           } else if (portfolio.length === 0) {
-            await supabase.from("badges").insert({
+            await supabase().from("badges").insert({
               user_id: userId,
               badge_type: "builder_i",
             });

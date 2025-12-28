@@ -18,12 +18,13 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    const db = supabaseServer();
     const { searchParams } = new URL(request.url);
     const sortBy = searchParams.get("sort_by") || "points";
     const limit = parseInt(searchParams.get("limit") || "100");
 
     // Fetch all users with their stats
-    const { data: users, error: userError } = await supabaseServer
+    const { data: users, error: userError } = await db
       .from("users")
       .select(
         `
@@ -52,7 +53,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch portfolio counts for each user
-    const { data: portfolios, error: portfolioError } = await supabaseServer
+    const { data: portfolios, error: portfolioError } = await db
       .from("portfolio_items")
       .select("user_id");
 
@@ -61,7 +62,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch badge data
-    const { data: badges, error: badgeError } = await supabaseServer
+    const { data: badges, error: badgeError } = await db
       .from("badges")
       .select("user_id");
 
@@ -70,7 +71,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch activity logs
-    const { data: activities, error: activityError } = await supabaseServer
+    const { data: activities, error: activityError } = await db
       .from("activity_logs")
       .select("user_id, timestamp")
       .gte("timestamp", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
@@ -80,10 +81,10 @@ export async function GET(request: NextRequest) {
     }
 
     // Build analytics for each user
-    const studentAnalytics: StudentAnalytics[] = users.map((user) => {
-      const userPortfolios = portfolios.filter((p) => p.user_id === user.id) || [];
-      const userBadges = badges.filter((b) => b.user_id === user.id) || [];
-      const userActivities = activities.filter((a) => a.user_id === user.id) || [];
+    const studentAnalytics: StudentAnalytics[] = (users || []).map((user: any) => {
+      const userPortfolios = portfolios.filter((p: any) => p.user_id === user.id) || [];
+      const userBadges = badges.filter((b: any) => b.user_id === user.id) || [];
+      const userActivities = activities.filter((a: any) => a.user_id === user.id) || [];
 
       // Calculate engagement score (0-100)
       const lastActiveTime = userActivities.length > 0
@@ -112,13 +113,13 @@ export async function GET(request: NextRequest) {
     });
 
     // Calculate dashboard metrics
-    const totalPoints = users.reduce((sum, u) => sum + u.points, 0);
+    const totalPoints = users.reduce((sum: number, u: any) => sum + u.points, 0);
     const avgPoints = users.length > 0 ? Math.round(totalPoints / users.length) : 0;
     const avgLevel = users.length > 0
-      ? Math.round((users.reduce((sum, u) => sum + u.level, 0) / users.length) * 10) / 10
+      ? Math.round((users.reduce((sum: number, u: any) => sum + u.level, 0) / users.length) * 10) / 10
       : 1;
     const avgEngagement = studentAnalytics.length > 0
-      ? Math.round(studentAnalytics.reduce((sum, s) => sum + s.engagement_score, 0) / studentAnalytics.length)
+      ? Math.round(studentAnalytics.reduce((sum: number, s: any) => sum + s.engagement_score, 0) / studentAnalytics.length)
       : 0;
 
     const metrics: DashboardMetrics = {
@@ -131,12 +132,12 @@ export async function GET(request: NextRequest) {
       top_skills: [], // TODO: Extract from portfolio items
       most_common_major: getMostCommonMajor(users),
       active_students_this_week: activities.length > 0
-        ? new Set(activities.map((a) => a.user_id)).size
+        ? new Set((activities as any[]).map((a: any) => a.user_id)).size
         : 0,
     };
 
-    const recentActivities = activities
-      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+    const recentActivities = (activities as any[])
+      .sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
       .slice(0, 10);
 
     const topPerformers = studentAnalytics.slice(0, 5);
@@ -170,9 +171,10 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const { format } = await request.json();
+    const db = supabaseServer();
 
     // Fetch all data needed for export
-    const { data: users } = await supabaseServer
+    const { data: users } = await db
       .from("users")
       .select("*")
       .order("points", { ascending: false });

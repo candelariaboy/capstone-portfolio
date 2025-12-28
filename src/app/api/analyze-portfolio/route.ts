@@ -68,6 +68,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const db = supabaseServer();
     const textContent = `${title} ${description}`;
     
     // Phase 1: Basic skill extraction as fallback
@@ -151,7 +152,7 @@ export async function POST(request: NextRequest) {
         };
       });
 
-      await supabaseServer
+      await db
         .from("portfolio_items")
         .update({
           skills_extracted: skillsWithConfidence,
@@ -171,7 +172,7 @@ export async function POST(request: NextRequest) {
 
     // Store recommendations in database
     for (const rec of recommendations) {
-      await supabaseServer.from("recommendations").insert({
+      await db.from("recommendations").insert({
         user_id,
         suggestion_type: rec.type,
         content: {

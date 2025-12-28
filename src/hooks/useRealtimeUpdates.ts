@@ -16,7 +16,7 @@ export function useRealtimeUsers() {
     // Fetch initial data
     const fetchUsers = async () => {
       try {
-        const { data } = await supabase
+        const { data } = await supabase()
           .from("users")
           .select("*")
           .order("points", { ascending: false })
@@ -35,7 +35,7 @@ export function useRealtimeUsers() {
     fetchUsers();
 
     // Subscribe to real-time updates on users table
-    const subscription = supabase
+    const subscription = supabase()
       .channel("public:users")
       .on(
         "postgres_changes",
@@ -84,7 +84,7 @@ export function useRealtimeBadges(userId?: string) {
     if (!userId) return;
 
     // Subscribe to badge updates for this user
-    const subscription = supabase
+    const subscription = supabase()
       .channel(`badges:${userId}`)
       .on(
         "postgres_changes",
@@ -122,7 +122,7 @@ export function useRealtimePoints(userId?: string) {
     if (!userId) return;
 
     // Subscribe to user points updates
-    const subscription = supabase
+    const subscription = supabase()
       .channel(`points:${userId}`)
       .on(
         "postgres_changes",

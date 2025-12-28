@@ -22,7 +22,7 @@ export default function PortfolioDetailPage({
   useEffect(() => {
     const loadItem = async () => {
       try {
-        const { data } = await supabase
+        const { data } = await supabase()
           .from("portfolio_items")
           .select("*")
           .eq("id", params.id)

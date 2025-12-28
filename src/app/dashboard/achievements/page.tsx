@@ -24,7 +24,7 @@ export default function AchievementsPage() {
       try {
         // Load user badges
         if (userId) {
-          const { data: badgesData } = await supabase
+          const { data: badgesData } = await supabase()
             .from("badges")
             .select("*")
             .eq("user_id", userId)

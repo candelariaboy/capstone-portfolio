@@ -28,7 +28,7 @@ export default function DashboardPage() {
 
       try {
         // Load user
-        const { data: userData } = await supabase
+        const { data: userData } = await supabase()
           .from("users")
           .select("*")
           .eq("id", userId)
@@ -39,7 +39,7 @@ export default function DashboardPage() {
         }
 
         // Load badges
-        const { data: badgesData } = await supabase
+        const { data: badgesData } = await supabase()
           .from("badges")
           .select("*")
           .eq("user_id", userId);
@@ -49,7 +49,7 @@ export default function DashboardPage() {
         }
 
         // Load recommendations
-        const { data: recsData } = await supabase
+        const { data: recsData } = await supabase()
           .from("recommendations")
           .select("*")
           .eq("user_id", userId)
@@ -61,7 +61,7 @@ export default function DashboardPage() {
         }
 
         // Load portfolio count
-        const { count } = await supabase
+        const { count } = await supabase()
           .from("portfolio_items")
           .select("*", { count: "exact", head: true })
           .eq("user_id", userId);

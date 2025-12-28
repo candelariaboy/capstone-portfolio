@@ -25,7 +25,7 @@ function DashboardLayoutContent({
       }
 
       try {
-        const { data, error } = await supabase
+        const { data, error } = await supabase()
           .from("users")
           .select("*")
           .eq("id", userId)

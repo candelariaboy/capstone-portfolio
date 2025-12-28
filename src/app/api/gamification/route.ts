@@ -12,8 +12,10 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    const db = supabaseServer();
+
     // Get user data
-    const { data: user } = await supabaseServer
+    const { data: user } = await db
       .from("users")
       .select("*")
       .eq("id", userId)
@@ -27,13 +29,13 @@ export async function GET(request: NextRequest) {
     }
 
     // Get badges
-    const { data: badges } = await supabaseServer
+    const { data: badges } = await db
       .from("badges")
       .select("*")
       .eq("user_id", userId);
 
     // Get achievements
-    const { data: achievements } = await supabaseServer
+    const { data: achievements } = await db
       .from("achievements")
       .select("*")
       .eq("user_id", userId);
@@ -67,8 +69,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const db = supabaseServer();
+
     // Get current user
-    const { data: user } = await supabaseServer
+    const { data: user } = await db
       .from("users")
       .select("*")
       .eq("id", userId)
@@ -96,7 +100,7 @@ export async function POST(request: NextRequest) {
     else newLevel = 1;
 
     // Update user
-    await supabaseServer
+    await db
       .from("users")
       .update({
         points: newPoints,
@@ -107,7 +111,7 @@ export async function POST(request: NextRequest) {
     // Award badge if specified
     if (badgeType) {
       // Check if badge already exists
-      const { data: existingBadge } = await supabaseServer
+      const { data: existingBadge } = await db
         .from("badges")
         .select("id")
         .eq("user_id", userId)
@@ -115,7 +119,7 @@ export async function POST(request: NextRequest) {
         .single();
 
       if (!existingBadge) {
-        await supabaseServer.from("badges").insert({
+        await db.from("badges").insert({
           user_id: userId,
           badge_type: badgeType,
         });
@@ -123,7 +127,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Log activity
-    await supabaseServer.from("activity_logs").insert({
+    await db.from("activity_logs").insert({
       user_id: userId,
       action_type: action,
       metadata: {
